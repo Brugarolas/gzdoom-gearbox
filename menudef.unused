@@ -1,52 +1,9 @@
-//simpler version of gearbox's option menu designed specifically for DI.
-//also makes use of libtooltipmenu, which a copy of is embedded into DI.
-
-AddOptionMenu "DIHudOptions"
-{
-	StaticText ""
-	StaticText "Weapon Wheel", "Purple"
-	ColorPicker "$GB_COLOR"     , gb_color
-	Tooltip "Customize the color of the wheel."
-	Option      "$GB_DIM"       , gb_enable_dim     , OnOff
-	Tooltip "When enabled, the menu will apply a dim effect to the screen."
-	Option      "$GB_BLUR"      , gb_enable_blur    , OnOff
-	Tooltip "When enabled, the menu will apply a blur shader to the screen."
-	Slider      "$GB_WHEEL_X"     , gb_wheel_position , -1.5, 1.5, 0.1, 1
-	Tooltip "Control the horizontal position of the wheel."
-	Slider      "$GB_WHEEL_SCALE" , gb_wheel_scale    , 0.1, 2, 0.1, 1
-	Tooltip "Control the size of the wheel."
-}
-
 // Entry Points ////////////////////////////////////////////////////////////////////////////////////
 
 AddOptionMenu OptionsMenu       { Submenu "$GB_OPTIONS", gb_Options }
 AddOptionMenu OptionsMenuSimple { Submenu "$GB_OPTIONS", gb_Options }
 
 // Menus ///////////////////////////////////////////////////////////////////////////////////////////
-
-AddOptionMenu "DIGameplay"
-{
-	StaticText ""
-	StaticText "Weapon Wheel", "Purple"
-	Option      "$GB_SELECT_ON_KEY_UP"         , gb_select_on_key_up         , OnOff
-	Tooltip "When enabled, the keybind switches from a toggle to a hold, and will select the highlighted option upon key release."
-	Option      "$GB_FREEZE_TIME"              , gb_time_freeze              , OnOff
-	Tooltip "When enabled, the wheel will freeze all objects in the level, allowing you to safely navigate the menu without coming to harm.\n\nDoes not affect level geometry or scripts."
-}
-
-AddOptionMenu "BoxWeaponsControlMenu" after "ControlMessage"
-{
-	StaticText  ""
-	Control     "$GB_TOGGLE_WEAPON_MENU"    , "+gb_toggle_weapon_menu"
-	Tooltip "A radial menu for quickly choosing between any of your selected weapons."
-	Tooltip "\nMenu can be selected using mouse or keybinds.\nCan be configured in the HUD options."
-	Control     "$GB_TOGGLE_INVENTORY_MENU" , "+gb_toggle_inventory_menu"
-	Tooltip "Like the weapon wheel, but for consumables instead. The chosen consumable will be used instantly."
-	Tooltip "\nMenu can be selected using mouse or keybinds.\nRight-clicking will close the menu without selecting anything."
-	StaticText ""
-	Control     "$GB_PREV_WEAPON"           , "gb_prev_weapon"
-	Tooltip "Quickly switch to your previously used weapon, if available."
-}
 
 OptionMenu gb_Options
 {
@@ -96,11 +53,6 @@ OptionMenu gb_BehaviorOptions
   StaticText  ""
   Option      "$GB_SELECT_ON_KEY_UP"         , gb_select_on_key_up         , OnOff
   Option      "$GB_FREEZE_TIME"              , gb_time_freeze              , gb_FreezeValues
-  Option      "$GB_FREEZE_INVUL"             , gb_time_freeze_invul        , OnOff
-  Option      "$GB_SLOW_TIME"                , gb_time_slow                , OnOff
-  StaticText  "$GB_SLOW_TIME_NOTE", black
-  StaticText  "$GB_SLOW_TIME_NOTE2", black
-  Option      "$GB_SLOW_SOUND"               , gb_time_slow_sound          , OnOff
   Option      "$GB_ENABLE_ON_AUTOMAP"        , gb_on_automap               , OnOff
   Option      "$GB_LOCK_POSITION"            , gb_lock_positions           , OnOff
   Option      "$GB_FROZEN_CAN_OPEN"          , gb_frozen_can_open          , OnOff
@@ -151,7 +103,7 @@ OptionMenu gb_WheelOptions
 
   StaticText  ""
   Slider      "$GB_WHEEL_X"     , gb_wheel_position , -1.5, 1.5, 0.1, 1
-  Slider      "$GB_WHEEL_SCALE" , gb_wheel_scale    , 0.5, 2, 0.1, 1
+  Slider      "$GB_WHEEL_SCALE" , gb_wheel_scale    , 0.1, 2, 0.1, 1
   Option      "$GB_WHEEL_TINT"  , gb_wheel_tint     , OnOff
 
   StaticText  ""
@@ -159,7 +111,9 @@ OptionMenu gb_WheelOptions
   Slider      "$GB_MULTIWHEEL_LIMIT"  , gb_multiwheel_limit , 3, 100, 1, 0
 
   StaticText  ""
-  Option      "$GB_WHEEL_HILITE_MSG"  , gb_wheel_msg  , OnOff
+  StaticText  "$GB_MOUSE_SENSITIVITY", 1
+  Slider      "$GB_X", gb_mouse_sensitivity_x, 0.1, 5, 0.1, 1
+  Slider      "$GB_Y", gb_mouse_sensitivity_y, 0.1, 5, 0.1, 1
 
 }
 
@@ -227,6 +181,7 @@ OptionValue gb_FreezeValues
 {
   0, "$OPTVAL_OFF"
   1, "$GB_LEVEL_AND_PLAYER"
+  2, "$GB_PLAYER"
 }
 
 OptionString gb_FontValues

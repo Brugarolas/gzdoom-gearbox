@@ -16,6 +16,7 @@
 !*.ogg
 !*.wav
 !*.fp
+!*.unused
 
 # But do ignore this:
 

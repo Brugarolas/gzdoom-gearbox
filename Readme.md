@@ -1,3 +1,7 @@
+> [!NOTE]
+> **This is a fork of Gearbox designed for a personal project of mine.**
+> **If you're looking to use this for personal use, I suggest using the [parent repo](https://github.com/mmaulwurff/gearbox) instead.**
+
 # Gearbox
 
 Gearbox is an add-on for GZDoom engine that provides more convenient ways to
