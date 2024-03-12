@@ -50,6 +50,28 @@ class gb_EventHandler : EventHandler
     // changing options.
     if (isClosed) mFreezer.thaw();
     else          mFreezer.freeze();
+    mFreezer.fadeoutInvulnerability();
+	
+	PlayerInfo player = players[consolePlayer];
+	if (isClosed)
+	{
+		if(thawDelay > 0)
+		{
+			mFreezer.freezePlayer();
+			thawDelay--;
+		}
+		else if(thawDelay == 0)
+		{
+			mFreezer.thawPlayer();
+			thawDelay = -1;
+		}
+	}
+	else
+	{
+		mFreezer.freezePlayer();
+		mFreezer.freezeActors();
+		thawDelay = 17;
+	}
 
     if (!isClosed && (gb_Player.isDead() || isDisabledOnAutomap()))
     {
@@ -509,5 +531,6 @@ class gb_EventHandler : EventHandler
   private gb_WheelIndexer    mWheelIndexer;
 
   private bool mIsInitialized;
+  private int thawDelay;
 
 } // class gb_EventHandler

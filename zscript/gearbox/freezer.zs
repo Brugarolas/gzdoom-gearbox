@@ -35,7 +35,7 @@ class gb_Freezer play
 
     int freezeMode = mOptions.getTimeFreezeMode();
     if (isLevelFreezeEnabled (freezeMode)) freezeLevel();
-    if (isPlayerFreezeEnabled(freezeMode)) freezePlayer();
+    //if (isPlayerFreezeEnabled(freezeMode)) freezePlayer();
   }
 
   void thaw()
@@ -44,7 +44,22 @@ class gb_Freezer play
     mWasFrozen = false;
 
     if (isLevelThawEnabled()) thawLevel();
-    thawPlayer();
+    //thawPlayer();
+  }
+
+  void fadeoutInvulnerability()
+  {
+	//This is to disable invulnerability after wheel close when loaded with bullet-time-x mod
+	if(mWheelCloseCounter > 0)
+	{
+		mWheelCloseCounter--;
+	}
+	else if(mWheelCloseCounter == 0)
+	{
+		bool playerSlowMoInvulnerable = mOptions.getTimeFreezeInvMode();
+		if(playerSlowMoInvulnerable) players[consoleplayer].mo.bInvulnerable = false;
+		mWheelCloseCounter = -1;
+	}
   }
 
 // private: ////////////////////////////////////////////////////////////////////////////////////////
@@ -82,34 +97,159 @@ class gb_Freezer play
   private
   void freezeLevel()
   {
-    mWasLevelFrozen = level.isFrozen();
-    level.setFrozen(true);
+    //mWasLevelFrozen = level.isFrozen();
+    //level.setFrozen(true);
+	
+	if(mWasLevelFrozen) return;
+	
+	PlayerInfo player = players[consolePlayer];
+	
+	bool useSlowMo = mOptions.getTimeSlowMode();
+	bool useSlowMoSound = mOptions.getTimeSlowSound();
+	
+	bool playerSlowMoInvulnerable = mOptions.getTimeFreezeInvMode();
+	if(playerSlowMoInvulnerable) players[consoleplayer].mo.bInvulnerable = true; //Make player invulnerable during freeze/slow-mo
+	
+	string btClassName = "BulletTime";
+	class<EventHandler> btLoaded = btClassName;
+	
+	if(btLoaded && useSlowMo)
+	{
+		gb_EventHandler.SendNetworkEvent("btRemoteActivate", useSlowMoSound, 20);
+		return;
+	}
+	
+	if(!player.mo.CountInv("gbPowerTimeFreezeColor")) player.mo.GiveInventory("gbTimeFreezerColor", 1);
+	if(useSlowMoSound) player.mo.A_StartSound("SLWSTART",  0, CHANF_LOCAL, 1.0, ATTN_NONE, 1.0);
+	freezeActors();
+	
+	mWasLevelFrozen = true;
+  }
+  
+  void freezeActors()
+  {
+	bool useSlowMo = mOptions.getTimeSlowMode();
+	string btClassName = "BulletTime";
+	class<EventHandler> btLoaded = btClassName;
+	if(btLoaded && useSlowMo) return;
+	
+	ThinkerIterator It = ThinkerIterator.Create();
+	Actor Mo;
+	While (Mo = Actor(It.Next()))
+	{
+		If (Mo && (Mo.bISMONSTER || Mo.bMISSILE) && Mo.health > 0)
+		{
+			//if the actor is marked for frozen mmake sure to keep frozen
+			if(!Mo.CountInv("gbtimeFreezeMarker") && !Mo.CountInv("gbtimeSlowMarker"))
+			{
+				if(useSlowMo)
+				{
+					Mo.GiveInventory("gbtimeSlowMarker", 1);
+					Vector3 mVel = Mo.vel;
+					Int mGravity = Mo.gravity;
+					let moInfo = gbtimeSlowMarker(Mo.FindInventory("gbtimeSlowMarker"));
+					moInfo.mVel = mVel;
+					moInfo.mGravity = mGravity;
+				}
+				else
+				{
+					Mo.GiveInventory("gbtimeFreezeMarker", 1);
+					Vector3 mVel = Mo.vel;
+					Int mGravity = Mo.gravity;
+					Let moInfo = gbtimeFreezeMarker(Mo.FindInventory("gbtimeFreezeMarker"));
+					moInfo.mVel = mVel;
+					moInfo.mGravity = mGravity;
+				}
+			}
+		}
+	}
   }
 
-  private
   void freezePlayer()
   {
     mWasPlayerFrozen = true;
 
     PlayerInfo player = players[consolePlayer];
+	
+	player.vel = (0, 0);
+	player.mo.vel = (0, 0, 0);
+	player.mo.gravity = 0;
 
+	/*
     mCheats   = player.cheats;
     mVelocity = player.mo.vel;
     mGravity  = player.mo.gravity;
 
     gb_Sender.sendFreezePlayerEvent(player.cheats | FROZEN_CHEATS_FLAGS, (0, 0, 0), 0);
+	*/
   }
 
   private
   void thawLevel() const
   {
-    level.setFrozen(mWasLevelFrozen);
+    //level.setFrozen(mWasLevelFrozen);
+	
+	PlayerInfo player = players[consolePlayer];
+	
+	bool useSlowMo = mOptions.getTimeSlowMode();
+	bool useSlowMoSound = mOptions.getTimeSlowSound();
+	
+	mWheelCloseCounter = 52; //This counter will make sure invulnerability is disabled when wheel is closed
+	
+	string btClassName = "BulletTime";
+	class<EventHandler> btLoaded = btClassName;
+	
+	if(btLoaded)
+	{
+		gb_EventHandler.SendNetworkEvent("btRemoteDeactivate", useSlowMoSound);
+	}
+	
+	player.mo.TakeInventory("gbPowerTimeFreezeColor", 99);
+	if(useSlowMoSound) player.mo.A_StartSound("SLWSTOP",  0, CHANF_LOCAL, 1.0, ATTN_NONE, 1.0);
+	thawActors();
+	
+	mWasLevelFrozen = false;
+  }
+  
+  void thawActors()
+  {
+	ThinkerIterator It = ThinkerIterator.Create();
+	Actor Mo;
+	While (Mo = Actor(It.Next()))
+	{
+		if(Mo.CountInv("gbtimeFreezeMarker") > 0)
+		{
+			let moInfo =  gbtimeFreezeMarker(Mo.FindInventory("gbtimeFreezeMarker"));
+			Vector3 mVel = moInfo.mVel;
+			Int mGravity = moInfo.mGravity;
+			moInfo.destroy();
+			Mo.tics = 1;
+			Mo.vel = mVel;
+			Mo.gravity = mGravity;
+		}
+		if(Mo.CountInv("gbtimeSlowMarker") > 0)
+		{
+			let moInfo =  gbtimeSlowMarker(Mo.FindInventory("gbtimeSlowMarker"));
+			Vector3 mVel = moInfo.mVel;
+			Int mGravity = moInfo.mGravity;
+			moInfo.destroy();
+			Mo.tics = 1;
+			Mo.vel = mVel;
+			Mo.gravity = mGravity;
+		}
+	}
   }
 
-  private
   void thawPlayer() const
   {
-    if (mWasPlayerFrozen) gb_Sender.sendFreezePlayerEvent(mCheats, mVelocity, mGravity);
+    //if (mWasPlayerFrozen) gb_Sender.sendFreezePlayerEvent(mCheats, mVelocity, mGravity);
+	
+    PlayerInfo player = players[consolePlayer];
+	
+	player.vel = player.mo.default.vel.xy;
+	player.mo.vel = player.mo.default.vel;
+	player.mo.gravity = player.mo.default.gravity;
+		
     mWasPlayerFrozen = false;
   }
 
@@ -119,6 +259,8 @@ class gb_Freezer play
 
   private bool    mWasLevelFrozen;
   private bool    mWasPlayerFrozen;
+  Array<int> projectileVelX, projectileVelY, projectileVelZ;
+  private int     mWheelCloseCounter;
 
   private int     mCheats;
   private vector3 mVelocity; // to reset weapon bobbing.
@@ -127,3 +269,91 @@ class gb_Freezer play
   private gb_Options mOptions;
 
 } // class gb_Freezer
+
+
+
+Class gbtimeFreezeMarker : Inventory
+{
+	Default
+	{
+		+INVENTORY.UNDROPPABLE;
+		+INVENTORY.UNTOSSABLE;
+		+INVENTORY.UNCLEARABLE;
+		+INVENTORY.PERSISTENTPOWER;
+		inventory.maxamount 1;
+	}
+	
+	Override Void DoEffect()
+	{
+		super.DoEffect();
+		if(!owner) destroy();
+		
+		owner.tics = -1;
+		owner.gravity = 0;
+		owner.vel = (0, 0, 0);
+	}
+	
+	Vector3 mVel;
+	Int mGravity;
+}
+
+Class gbtimeSlowMarker : gbtimeFreezeMarker
+{
+	Default
+	{
+		+INVENTORY.UNDROPPABLE;
+		+INVENTORY.UNTOSSABLE;
+		+INVENTORY.UNCLEARABLE;
+		+INVENTORY.PERSISTENTPOWER;
+		inventory.maxamount 1;
+	}
+	
+	Override Void DoEffect()
+	{
+		super.DoEffect();
+		if(!owner) destroy();
+		
+		if(slowDelay < 11)
+		{
+			owner.tics = -1;
+			owner.gravity = 0;
+			owner.vel = (0, 0, 0);
+			slowDelay++;
+		}
+		else if(slowDelay == 11)
+		{
+			owner.tics = 1;
+			owner.vel = mVel;
+			owner.gravity = mGravity;
+			slowDelay = 0;
+		}
+	}
+	
+	Int slowDelay;
+}
+
+Class gbTimeFreezerColor : PowerupGiver
+{
+	Default
+	{
+		Inventory.MaxAmount 0;
+		Powerup.Type "gbPowerTimeFreezeColor";
+		Powerup.Duration 0x7FFFFFFD;
+		+INVENTORY.AUTOACTIVATE;
+	}
+	States
+	{
+	Spawn:
+		MEGA ABCD 4 bright;
+		Loop;
+	}
+}
+
+Class gbPowerTimeFreezeColor : Powerup
+{
+	Default
+	{
+		Powerup.Color "F5 FB FF", 0.15;
+		Powerup.Duration 0x7FFFFFFD;
+	}
+}
