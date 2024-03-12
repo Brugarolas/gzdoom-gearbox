@@ -64,6 +64,22 @@ GZDoom 4.5 required.
 If you want Gearbox to support your mod out of the box, assign
 Inventory.AltHudIcon for your weapons! Tag property is also nice to have.
 
+## Compatibility Issues
+
+- [PyWeaponWheel v0.3](https://forum.zdoom.org/viewtopic.php?f=43&t=61061)
+  overrides time freezing. If you are using both mods and want to freeze time
+  with Gearbox, set PyWeaponWheel's option "Freeze when wheel is open"
+  (`py_weaponwheel_freeze` CVar) to Off.
+
+  Note that PyWeaponWheel may be built in some mods, for example in Project
+  Brutality. The solution is the same: disable time PyWeaponWheel's time
+  freezing.
+
+## Known Issues
+
+- Weapon icons in wheel aren't affected by "HUD preserves aspect ration" option.
+- Mouse input in wheel in multiplayer causes screen shake.
+
 ## License
 
 - code: [GPLv3](copying.txt)
