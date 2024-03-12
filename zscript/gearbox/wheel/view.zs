@@ -72,9 +72,18 @@ class gb_WheelView
     uint nWeapons = viewModel.tags.size();
     if (nWeapons == 0) return;
 
-    int screenHeight = mScreen.getScaledScreenHeight();
-    int radius       = screenHeight * 5 / 32;
-    int allowedWidth = int(screenHeight * 3 / 16 - MARGIN * 2 * mScaleFactor);
+    int screenHeight  = mScreen.getScaledScreenHeight();
+    int radius        = screenHeight * 5 / 32;
+    int allowedWidth  = int(screenHeight * 3 / 16 - MARGIN * 2 * mScaleFactor);
+    int allowedHeight = allowedWidth / 2;
+
+    double maxWidth, maxHeight;
+    [maxWidth, maxHeight] = gb_IconScaler.getMaxWidthHeight(viewModel);
+    double scale = gb_IconScaler.calculateMaxAllowedScale( allowedWidth
+                                                         , allowedHeight
+                                                         , maxWidth
+                                                         , maxHeight
+                                                         );
 
     int nPlaces = 0;
 
@@ -88,11 +97,21 @@ class gb_WheelView
       nPlaces = multiWheelModel.data.size();
       for (uint i = 0; i < nPlaces; ++i)
       {
-        bool isWeapon = multiWheelModel.isWeapon[i];
-        int  data     = multiWheelModel.data[i];
+        uint index = (i + innerIndex + 1) % nPlaces;
+        bool isWeapon = multiWheelModel.isWeapon[index];
+        int  data     = multiWheelModel.data[index];
 
-        if (isWeapon) displayWeapon(i, data, nPlaces, radius, allowedWidth, viewModel, mCenter);
-        else          displaySlot  (i, data, nPlaces, radius);
+        if (!isWeapon) displaySlot(index, data, nPlaces, radius);
+        else displayItem( index
+                        , data
+                        , nPlaces
+                        , radius
+                        , viewModel
+                        , mCenter
+                        , scale
+                        , allowedWidth
+                        , allowedHeight
+                        );
       }
 
       drawHands(nPlaces, innerIndex, mCenter, 0);
@@ -108,7 +127,9 @@ class gb_WheelView
                         , viewModel
                         , radius
                         , allowedWidth
+                        , allowedHeight
                         , int(controllerModel.radius)
+                        , scale
                         );
       }
     }
@@ -118,13 +139,31 @@ class gb_WheelView
       for (uint i = 0; i < nWeapons; ++i)
       {
         if (i == innerIndex) continue;
-        displayWeapon(i, i, nWeapons, radius, allowedWidth, viewModel, mCenter);
+        displayItem( i
+                   , i
+                   , nWeapons
+                   , radius
+                   , viewModel
+                   , mCenter
+                   , scale
+                   , allowedWidth
+                   , allowedHeight
+                   );
       }
 
       nPlaces = nWeapons;
       if (innerIndex != -1)
       {
-        displayWeapon(innerIndex, innerIndex, nPlaces, radius, allowedWidth, viewModel, mCenter);
+        displayItem( innerIndex
+                   , innerIndex
+                   , nPlaces
+                   , radius
+                   , viewModel
+                   , mCenter
+                   , scale
+                   , allowedWidth
+                   , allowedHeight
+                   );
       }
       drawHands(nPlaces, innerIndex, mCenter, 0);
     }
@@ -150,7 +189,9 @@ class gb_WheelView
                        , gb_ViewModel viewModel
                        , int  radius
                        , int  allowedWidth
+                       , int  allowedHeight
                        , int  controllerRadius
+                       , double scale
                        )
   {
     int     wheelRadius      = mScreen.getWheelRadius();
@@ -178,27 +219,31 @@ class gb_WheelView
         continue;
       }
 
-      displayWeapon( place
-                   , i
-                   , nWeaponsInSlot * 2
-                   , radius
-                   , allowedWidth
-                   , viewModel
-                   , outerWheelCenter
-                   , startingAngle
-                   );
+      displayItem( place
+                 , i
+                 , nWeaponsInSlot * 2
+                 , radius
+                 , viewModel
+                 , outerWheelCenter
+                 , scale
+                 , allowedWidth
+                 , allowedHeight
+                 , startingAngle
+                 );
     }
 
     // draw the selected thing last in case of icon overlapping
-    displayWeapon( selectedPlace
-                 , viewModel.selectedIndex
-                 , nWeaponsInSlot * 2
-                 , radius
-                 , allowedWidth
-                 , viewModel
-                 , outerWheelCenter
-                 , startingAngle
-                 );
+    displayItem( selectedPlace
+               , viewModel.selectedIndex
+               , nWeaponsInSlot * 2
+               , radius
+               , viewModel
+               , outerWheelCenter
+               , scale
+               , allowedWidth
+               , allowedHeight
+               , startingAngle
+               );
 
     int deadRadius = mScreen.getWheelDeadRadius();
 
@@ -245,48 +290,49 @@ class gb_WheelView
   }
 
   private
-  void displayWeapon( uint place
-                    , uint iconIndex
-                    , uint nPlaces
-                    , int  radius
-                    , int  allowedWidth
-                    , gb_ViewModel viewModel
-                    , vector2 center
-                    , double startingAngle = 0.0
-                    ) const
+  void displayItem( uint place
+                  , uint iconIndex
+                  , uint nPlaces
+                  , int  radius
+                  , gb_ViewModel viewModel
+                  , vector2 center
+                  , double scale
+                  , int allowedWidth
+                  , int allowedHeight
+                  , double startingAngle = 0.0
+                  ) const
   {
-    // Code is adapted from GZDoom AltHud.DrawImageToBox.
-
-    TextureID texture     = viewModel.icons[iconIndex];
-    vector2   textureSize = TexMan.getScaledSize(texture) * 2 * mScaleFactor;
-
-    if (texture.isValid())
-    {
-      textureSize.x *= viewModel.iconScaleXs[iconIndex];
-      textureSize.y *= viewModel.iconScaleYs[iconIndex];
-    }
-
-    bool      isTall      = (textureSize.y * 1.2 > textureSize.x);
-
-    double scale = isTall
-      ? ((allowedWidth < textureSize.y) ? allowedWidth / textureSize.y : 1.0)
-      : ((allowedWidth < textureSize.x) ? allowedWidth / textureSize.x : 1.0)
-      ;
+    TextureID texture = viewModel.icons[iconIndex];
 
     double  angle = (startingAngle + itemAngle(nPlaces, place)) % 360;
     vector2 xy    = (sin(angle), -cos(angle)) * radius + center;
-    int width  = int(textureSize.x * scale);
-    int height = int(textureSize.y * scale);
 
-    drawIcon(texture, xy, width, height, angle, isTall);
+    double width  = viewModel.iconWidths[iconIndex];
+    double height = viewModel.iconHeights[iconIndex];
+    bool isWide = (width > height);
+    bool isBig  = viewModel.iconBigs[iconIndex];
+    if (!texture.isValid())
+    {
+      scale = 1;
+    }
+    else if (isBig)
+    {
+      scale = isWide
+        ? gb_IconScaler.calculateMaxAllowedScale(allowedWidth, allowedHeight, width, height)
+        : gb_IconScaler.calculateMaxAllowedScale(allowedWidth, allowedHeight, height, width);
+    }
+
+    width  *= scale;
+    height *= scale;
+
+    drawIcon(texture, xy, width, height, angle, !isWide);
     drawAmmo(angle, center, viewModel, iconIndex);
   }
 
   private
-  void drawIcon(TextureID texture, vector2 xy, int w, int h, double angle, bool isTall) const
+  void drawIcon(TextureID texture, vector2 xy, double w, double h, double angle, bool isTall) const
   {
     bool flipX;
-    double scaleY;
 
     if (mIsRotating)
     {
@@ -295,14 +341,11 @@ class gb_WheelView
       angle = -angle + 90;
 
       if (isTall) angle += flipX ? 90 : -90;
-
-      scaleY = 1.0;
     }
     else
     {
-      flipX  = false;
-      angle  = 0;
-      scaleY = mOptions.isPreservingAspectRatio() ? 1.2 : 1.0;
+      flipX = false;
+      angle = 0;
     }
 
     if (!texture.isValid()) texture = mTextureCache.noIcon;
@@ -312,9 +355,8 @@ class gb_WheelView
                       , xy.x
                       , xy.y
                       , DTA_CenterOffset , true
-                      , DTA_DestWidth    , w
-                      , DTA_DestHeight   , h
-                      , DTA_ScaleY       , scaleY
+                      , DTA_DestWidthF   , w
+                      , DTA_DestHeightF  , h
                       , DTA_Alpha        , mAlpha
                       , DTA_Rotate       , angle
                       , DTA_FlipX        , flipX
@@ -328,9 +370,8 @@ class gb_WheelView
                       , xy.x
                       , xy.y
                       , DTA_CenterOffset , true
-                      , DTA_DestWidth    , w
-                      , DTA_DestHeight   , h
-                      , DTA_ScaleY       , scaleY
+                      , DTA_DestWidthF   , w
+                      , DTA_DestHeightF  , h
                       , DTA_Alpha        , mAlpha * 0.3
                       , DTA_FillColor    , mBaseColor
                       , DTA_Rotate       , angle

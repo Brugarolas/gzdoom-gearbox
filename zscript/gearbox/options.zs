@@ -30,13 +30,14 @@ class gb_Options
     result.mViewType               = gb_Cvar.from("gb_view_type");
     result.mIsDimEnabled           = gb_Cvar.from("gb_enable_dim");
     result.mIsBlurEnabled          = gb_Cvar.from("gb_enable_blur");
+    result.mIsTallItems            = gb_Cvar.from("gb_tall_items");
+
     result.mWheelTint              = gb_Cvar.from("gb_wheel_tint");
     result.mMultiWheelLimit        = gb_Cvar.from("gb_multiwheel_limit");
     result.mShowTags               = gb_Cvar.from("gb_show_tags");
     result.mShowWeaponTagsOnChange = gb_Cvar.from("DisplayNameTags");
     result.mIsPositionLocked       = gb_Cvar.from("gb_lock_positions");
     result.mFrozenCanOpen          = gb_Cvar.from("gb_frozen_can_open");
-    result.mPreserveAspectRatio    = gb_Cvar.from("hud_AspectScale");
 
     result.mOpenOnScroll           = gb_Cvar.from("gb_open_on_scroll");
     result.mOpenOnSlot             = gb_Cvar.from("gb_open_on_slot");
@@ -82,13 +83,14 @@ class gb_Options
   int  getDimColor()                 const { return mDimColor              .getInt();     }
   bool isDimEnabled()                const { return mIsDimEnabled          .getBool();    }
   bool isBlurEnabled()               const { return mIsBlurEnabled         .getBool();    }
+  bool isTallItems()                 const { return mIsTallItems           .getBool();    }
+
   bool getWheelTint()                const { return mWheelTint             .getBool();    }
   int  getMultiWheelLimit()          const { return mMultiWheelLimit       .getInt();     }
   bool isShowingTags()               const { return mShowTags              .getBool();    }
   bool isShowingWeaponTagsOnChange() const { return mShowWeaponTagsOnChange.getInt() & 2; }
   bool isPositionLocked()            const { return mIsPositionLocked      .getBool();    }
   bool isFrozenCanOpen()             const { return mFrozenCanOpen         .getBool();    }
-  bool isPreservingAspectRatio()     const { return mPreserveAspectRatio   .getBool();    }
 
   bool isOpenOnScroll()              const { return mOpenOnScroll          .getBool();    }
   bool isOpenOnSlot()                const { return mOpenOnSlot            .getBool();    }
@@ -144,6 +146,8 @@ class gb_Options
   private gb_Cvar mViewType;
   private gb_Cvar mIsDimEnabled;
   private gb_Cvar mIsBlurEnabled;
+  private gb_Cvar mIsTallItems;
+
   private gb_Cvar mWheelTint;
   private gb_Cvar mMultiWheelLimit;
   private gb_Cvar mShowTags;
@@ -165,7 +169,6 @@ class gb_Options
   private gb_Cvar mEnableSounds;
   private gb_Cvar mWheelHiliteMsg;
   private gb_Cvar mFrozenCanOpen;
-  private gb_Cvar mPreserveAspectRatio;
 
   private gb_Cvar mMouseSensitivityX;
   private gb_Cvar mMouseSensitivityY;
