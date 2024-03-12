@@ -1,4 +1,5 @@
 /* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2020-2021
+ * Carrascado 2022
  *
  * This file is part of Gearbox.
  *
@@ -40,6 +41,8 @@ class gb_Options
 
     result.mOpenOnScroll           = gb_Cvar.from("gb_open_on_scroll");
     result.mOpenOnSlot             = gb_Cvar.from("gb_open_on_slot");
+    result.mReverseSlotCycleOrder  = gb_Cvar.from("gb_reverse_slot_cycle_order");
+    result.mSelectFirstSlotWeapon  = gb_Cvar.from("gb_select_first_slot_weapon");
     result.mMouseInWheel           = gb_Cvar.from("gb_mouse_in_wheel");
     result.mSelectOnKeyUp          = gb_Cvar.from("gb_select_on_key_up");
     result.mNoMenuIfOne            = gb_Cvar.from("gb_no_menu_if_one");
@@ -64,6 +67,8 @@ class gb_Options
 
     result.mWheelPosition          = gb_Cvar.from("gb_wheel_position");
     result.mWheelScale             = gb_Cvar.from("gb_wheel_scale");
+    
+    result.mUseSoundpack           = gb_Cvar.from("gb_soundpack");
 
     return result;
   }
@@ -85,6 +90,8 @@ class gb_Options
 
   bool isOpenOnScroll()              const { return mOpenOnScroll          .getBool();    }
   bool isOpenOnSlot()                const { return mOpenOnSlot            .getBool();    }
+  bool isSlotCycleOrderReversed()    const { return mReverseSlotCycleOrder .getBool();    }
+  bool isSelectFirstSlotWeapon()     const { return mSelectFirstSlotWeapon .getBool();    }
   bool isMouseInWheel()              const { return mMouseInWheel          .getBool();    }
   bool isSelectOnKeyUp()             const { return mSelectOnKeyUp         .getBool();    }
   bool isNoMenuIfOne()               const { return mNoMenuIfOne           .getBool();    }
@@ -92,6 +99,8 @@ class gb_Options
   bool isSoundEnabled()              const { return mEnableSounds          .getBool();    }
 
   int  getTimeFreezeMode()           const { return mTimeFreeze            .getInt();     }
+  
+  int  getSoundpack()           const { return mUseSoundpack          .getInt();     }
 
   vector2 getMouseSensitivity() const
   {
@@ -139,6 +148,8 @@ class gb_Options
 
   private gb_Cvar mOpenOnScroll;
   private gb_Cvar mOpenOnSlot;
+  private gb_Cvar mReverseSlotCycleOrder;
+  private gb_Cvar mSelectFirstSlotWeapon;
   private gb_Cvar mMouseInWheel;
   private gb_Cvar mSelectOnKeyUp;
   private gb_Cvar mNoMenuIfOne;
@@ -165,5 +176,7 @@ class gb_Options
 
   private gb_Cvar mWheelPosition;
   private gb_Cvar mWheelScale;
+  
+  private gb_Cvar mUseSoundpack;
 
 } // class gb_Options

@@ -1,4 +1,5 @@
 /* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2021
+ * Carrascado 2022
  *
  * This file is part of Gearbox.
  *
@@ -31,6 +32,12 @@ class gb_InventoryMenu
     return result;
   }
 
+  static
+  bool thereAreNoItems()
+  {
+    return getItemsNumber() == 0;
+  }
+
   string confirmSelection() const
   {
     let item  = players[consolePlayer].mo.inv;
@@ -49,32 +56,35 @@ class gb_InventoryMenu
   }
 
   ui
-  void selectNext()
+  bool selectNext()
   {
     int nItems = getItemsNumber();
-    if (nItems == 0) return;
+    if (nItems == 0) return false;
 
-    mSounds.playTick();
     mSelectedIndex = (mSelectedIndex + 1) % nItems;
+
+    return true;
   }
 
   ui
-  void selectPrev()
+  bool selectPrev()
   {
     int nItems = getItemsNumber();
-    if (nItems == 0) return;
+    if (nItems == 0) return false;
 
-    mSounds.playTick();
     mSelectedIndex = (mSelectedIndex - 1 + nItems) % nItems;
+
+    return true;
   }
 
   ui
-  void setSelectedIndex(int index)
+  bool setSelectedIndex(int index)
   {
-    if (index == -1 || mSelectedIndex == index) return;
+    if (index == -1 || mSelectedIndex == index) return false;
 
-    mSounds.playTick();
     mSelectedIndex = index;
+
+    return true;
   }
 
   ui
@@ -92,6 +102,9 @@ class gb_InventoryMenu
     {
       if (item.bInvBar)
       {
+        string tag  = item.getTag();
+        int    icon = int(BaseStatusBar.getInventoryIcon(item, BaseStatusBar.DI_AltIconFirst));
+        viewModel.tags.push(tag);
         TextureID icon;
         int textureType;
         [icon, textureType] = mIconProvider.getTextureFor(item);

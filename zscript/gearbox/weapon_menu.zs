@@ -1,4 +1,5 @@
-/* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2020-2021
+/* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2020-2022
+ * Carrascado 2022
  *
  * This file is part of Gearbox.
  *
@@ -33,7 +34,6 @@ class gb_WeaponMenu
     result.mIconProvider  = iconProvider;
     result.mCacheTime     = 0;
     result.mOptions       = options;
-    result.mSounds        = sounds;
 
     loadHideServices(result.mHideServices);
 
@@ -45,12 +45,12 @@ class gb_WeaponMenu
     return mSelectedIndex;
   }
 
-  void setSelectedIndexFromView(gb_ViewModel viewModel, int index)
+  bool setSelectedIndexFromView(gb_ViewModel viewModel, int index)
   {
-    if (index == -1 || mSelectedIndex == viewModel.indices[index]) return;
+    if (index == -1 || mSelectedIndex == viewModel.indices[index]) return false;
 
-    mSounds.playTick();
     mSelectedIndex = viewModel.indices[index];
+    return true;
   }
 
   void setSelectedWeapon(class<Weapon> aClass)
@@ -62,29 +62,31 @@ class gb_WeaponMenu
   }
 
   ui
-  void selectNextWeapon()
+  bool selectNextWeapon()
   {
     mSelectedIndex = findNextWeapon();
-    if (mSelectedIndex != mWeapons.size()) mSounds.playTick();
+    return mSelectedIndex != mWeapons.size();
   }
 
   ui
-  void selectPrevWeapon()
+  bool selectPrevWeapon()
   {
     mSelectedIndex = findPrevWeapon();
-    if (mSelectedIndex != mWeapons.size()) mSounds.playTick();
+    return mSelectedIndex != mWeapons.size();
   }
 
-  bool selectSlot(int slot)
+  bool selectSlot(int slot, bool selectFirstWeapon = false)
   {
     uint nWeapons = mWeapons.size();
-    for (uint i = 1; i < nWeapons; ++i)
+    int direction = mOptions.isSlotCycleOrderReversed() ? -1 : 1;
+    int startOffset = selectFirstWeapon ? 0 : (mSelectedIndex + direction);
+
+    for (uint i = 0; i < nWeapons; ++i)
     {
-      uint index = (mSelectedIndex + nWeapons - i) % nWeapons;
+      uint index = (startOffset + nWeapons + direction * i) % nWeapons;
       if (mSlots[index] == slot && isInInventory(index) && !isHidden(mWeapons[index].getClassName()))
       {
         mSelectedIndex = index;
-        mSounds.playTick();
         return true;
       }
     }
@@ -96,14 +98,12 @@ class gb_WeaponMenu
   {
     uint nWeapons = mWeapons.size();
     int  nWeaponsInSlot = 0;
-    for (uint i = 1; i < nWeapons; ++i)
+    for (uint i = 0; i < nWeapons; ++i)
     {
-      uint index = (mSelectedIndex + nWeapons - i) % nWeapons;
-      nWeaponsInSlot += (mSlots[index] == slot && isInInventory(index));
+      nWeaponsInSlot += (mSlots[i] == slot && isInInventory(i));
       if (nWeaponsInSlot > 1) return false;
     }
-    if (nWeaponsInSlot == 0) return false;
-    return true;
+    return nWeaponsInSlot == 1;
   }
 
   bool isInInventory(int index) const
@@ -191,6 +191,17 @@ class gb_WeaponMenu
     }
 
     return oldIndex;
+  }
+
+  bool isThereNoWeapons() const
+  {
+    bool isNothingFound = true;
+    uint nWeapons = mWeapons.size();
+    for (uint i = 0; i < nWeapons; ++i)
+    {
+      if (isInInventory(i) && !isHidden(mWeapons[i].getClassName())) return false;
+    }
+    return isNothingFound;
   }
 
 // private: ////////////////////////////////////////////////////////////////////////////////////////
@@ -350,6 +361,29 @@ class gb_WeaponMenu
     return result;
   }
 
+  private ui
+  TextureID getIconFor(Weapon aWeapon) const
+  {
+    TextureID icon = BaseStatusBar.getInventoryIcon(aWeapon, BaseStatusBar.DI_AltIconFirst);
+
+    {
+      uint nServices = mIconServices.size();
+      string className = aWeapon.getClassName();
+      for (uint i = 0; i < nServices; ++i)
+      {
+        let service = mIconServices[i];
+        string iconResponse = service.uiGet(className);
+        if (iconResponse.length() != 0)
+        {
+          TextureID iconFromService = TexMan.checkForTexture(iconResponse, TexMan.Type_Any);
+          if (iconFromService.isValid()) icon = iconFromService;
+        }
+      }
+    }
+
+    return icon;
+  }
+
   private play State getReadyState(Weapon w) const { return w.getReadyState(); }
 
   private ui uint findNextWeapon() const { return findWeapon( 1); }
@@ -405,6 +439,5 @@ class gb_WeaponMenu
   private int          mCacheTime;
 
   private gb_Options mOptions;
-  private gb_Sounds  mSounds;
 
 } // class gb_WeaponMenu
