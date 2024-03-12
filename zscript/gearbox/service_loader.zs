@@ -1,4 +1,4 @@
-/* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2020-2021
+/* Copyright Alexander Kromm (mmaulwurff@gmail.com) 2021
  *
  * This file is part of Gearbox.
  *
@@ -15,24 +15,18 @@
  * Gearbox.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-struct gb_ViewModel
+class gb_ServiceLoader
 {
 
-  int selectedIndex;
+  static
+  void loadServices(string serviceName, out Array<gb_Service> services)
+  {
+    let iterator = gb_ServiceIterator.find(serviceName);
+    gb_Service aService;
+    while (aService = iterator.next())
+    {
+      services.push(aService);
+    }
+  }
 
-  Array<string> tags;
-  Array<int> slots;
-  Array<int> indices;
-
-  Array<TextureID> icons;
-  Array<double> iconWidths;
-  Array<double> iconHeights;
-  Array<bool> iconBigs;
-
-  Array<int> quantity1;
-  Array<int> maxQuantity1;
-
-  Array<int> quantity2;
-  Array<int> maxQuantity2;
-
-} // struct gb_ViewModel
+} // class gb_ServiceLoader

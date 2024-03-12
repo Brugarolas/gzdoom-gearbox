@@ -20,17 +20,21 @@ class gb_WeaponMenu
 {
 
   static
-  gb_WeaponMenu from(gb_WeaponData weaponData, gb_Options options)
+  gb_WeaponMenu from( gb_WeaponData   weaponData
+                    , gb_Options      options
+                    , gb_Sounds       sounds
+                    , gb_IconProvider iconProvider
+                    )
   {
     let result = new("gb_WeaponMenu");
 
     result.mWeapons.move(weaponData.weapons);
     result.mSlots.move(weaponData.slots);
     result.mSelectedIndex = 0;
+    result.mIconProvider  = iconProvider;
     result.mCacheTime     = 0;
     result.mOptions       = options;
 
-    loadIconServices(result.mIconServices);
     loadHideServices(result.mHideServices);
 
     return result;
@@ -126,8 +130,9 @@ class gb_WeaponMenu
       mCachedViewModel.slots       .clear();
       mCachedViewModel.indices     .clear();
       mCachedViewModel.icons       .clear();
-      mCachedViewModel.iconScaleXs .clear();
-      mCachedViewModel.iconScaleYs .clear();
+      mCachedViewModel.iconWidths  .clear();
+      mCachedViewModel.iconHeights .clear();
+      mCachedViewModel.iconBigs    .clear();
       mCachedViewModel.quantity1   .clear();
       mCachedViewModel.maxQuantity1.clear();
       mCachedViewModel.quantity2   .clear();
@@ -264,8 +269,9 @@ class gb_WeaponMenu
     destination.slots       .copy(source.slots);
     destination.indices     .copy(source.indices);
     destination.icons       .copy(source.icons);
-    destination.iconScaleXs .copy(source.iconScaleXs);
-    destination.iconScaleYs .copy(source.iconScaleYs);
+    destination.iconWidths  .copy(source.iconWidths);
+    destination.iconHeights .copy(source.iconHeights);
+    destination.iconBigs    .copy(source.iconBigs);
     destination.quantity1   .copy(source.quantity1);
     destination.maxQuantity1.copy(source.maxQuantity1);
     destination.quantity2   .copy(source.quantity2);
@@ -288,8 +294,9 @@ class gb_WeaponMenu
           viewModel.slots       .push(mSlots[i]);
           viewModel.indices     .push(i);
           viewModel.icons       .push(-1);
-          viewModel.iconScaleXs .push(-1);
-          viewModel.iconScaleYs .push(-1);
+          viewModel.iconWidths  .push(-1);
+          viewModel.iconHeights .push(-1);
+          viewModel.iconBigs    .push(-1);
           viewModel.quantity1   .push(-1);
           viewModel.maxQuantity1.push(-1);
           viewModel.quantity2   .push(-1);
@@ -306,12 +313,23 @@ class gb_WeaponMenu
       viewModel.slots.push(mSlots[i]);
       viewModel.indices.push(i);
 
-      TextureID icon = getIconFor(aWeapon);
+      TextureID icon;
+      int textureType;
+      [icon, textureType] = mIconProvider.getTextureFor(aWeapon);
 
       // Workaround, casting TextureID to int may be unreliable.
       viewModel.icons.push(int(icon));
-      viewModel.iconScaleXs.push(aWeapon.scale.x);
-      viewModel.iconScaleYs.push(aWeapon.scale.y);
+
+      vector2 iconSize = TexMan.getScaledSize(icon);
+      if (textureType == gb_IconProvider.TextureSpawn)
+      {
+        iconSize.x *= aWeapon.scale.x;
+        iconSize.y *= aWeapon.scale.y;
+      }
+      viewModel.iconWidths .push(iconSize.x);
+      viewModel.iconHeights.push(iconSize.y);
+
+      viewModel.iconBigs.push(textureType == gb_IconProvider.TextureReady);
 
       bool hasAmmo1 = aWeapon.ammo1;
       bool hasAmmo2 = aWeapon.ammo2 && aWeapon.ammo2 != aWeapon.ammo1;
@@ -405,34 +423,17 @@ class gb_WeaponMenu
   }
 
   private static
-  void loadIconServices(out Array<gb_Service> services)
-  {
-    loadServices("gb_IconService", services);
-  }
-
-  private static
   void loadHideServices(out Array<gb_Service> services)
   {
-    loadServices("gb_HideService", services);
-  }
-
-  private static
-  void loadServices(string serviceName, out Array<gb_Service> services)
-  {
-    let iterator = gb_ServiceIterator.find(serviceName);
-    gb_Service aService;
-    while (aService = iterator.next())
-    {
-      services.push(aService);
-    }
+    gb_ServiceLoader.loadServices("gb_HideService", services);
   }
 
   private Array< class<Weapon> > mWeapons;
   private Array< int >           mSlots;
   private uint mSelectedIndex;
 
-  private Array<gb_Service> mIconServices;
   private Array<gb_Service> mHideServices;
+  private gb_IconProvider   mIconProvider;
 
   private gb_ViewModel mCachedViewModel;
   private int          mCacheTime;

@@ -107,28 +107,29 @@ class gb_BlockyView
         // weapon
         {
           // code is adapted from GZDoom AltHud.DrawImageToBox.
-          TextureID weaponTexture = viewModel.icons[i];
-          let weaponSize = TexMan.getScaledSize(weaponTexture);
-          weaponSize.x *= viewModel.iconScaleXs[i];
-          weaponSize.y *= viewModel.iconScaleYs[i];
-          if (mOptions.isPreservingAspectRatio()) weaponSize.y *= 1.2;
+          double weaponWidth  = viewModel.iconWidths[i];
+          double weaponHeight = viewModel.iconHeights[i];
 
           int allowedWidth  = SELECTED_SLOT_WIDTH    - MARGIN * 2;
           int allowedHeight = SELECTED_WEAPON_HEIGHT - MARGIN * 2;
 
-          double scaleHor = (allowedWidth  < weaponSize.x) ? allowedWidth  / weaponSize.x : 1.0;
-          double scaleVer = (allowedHeight < weaponSize.y) ? allowedHeight / weaponSize.y : 1.0;
-          double scale    = min(scaleHor, scaleVer);
+          double maxWidth, maxHeight;
+          [maxWidth, maxHeight] = gb_IconScaler.getMaxWidthHeight(viewModel);
+          double scale = gb_IconScaler.calculateMaxAllowedScale( allowedWidth
+                                                               , allowedHeight
+                                                               , maxWidth
+                                                               , maxHeight
+                                                               );
+          weaponWidth  *= scale;
+          weaponHeight *= scale;
 
-          int weaponWidth  = int(round(weaponSize.x * scale));
-          int weaponHeight = int(round(weaponSize.y * scale));
-
-          drawWeapon( weaponTexture
-                    , slotX + SELECTED_SLOT_WIDTH / 2
-                    , weaponY + SELECTED_WEAPON_HEIGHT / 2
-                    , weaponWidth
-                    , weaponHeight
-                    );
+          TextureID itemTexture = viewModel.icons[i];
+          drawItem( itemTexture
+                  , slotX + SELECTED_SLOT_WIDTH / 2
+                  , weaponY + SELECTED_WEAPON_HEIGHT / 2
+                  , weaponWidth
+                  , weaponHeight
+                  );
         }
 
         // corners
@@ -390,7 +391,7 @@ class gb_BlockyView
   }
 
   private
-  void drawWeapon(TextureID texture, int x, int y, int w, int h) const
+  void drawItem(TextureID texture, int x, int y, double w, double h) const
   {
     Screen.drawTexture( texture
                       , NO_ANIMATION
@@ -398,8 +399,8 @@ class gb_BlockyView
                       , y
                       , DTA_CenterOffset  , true
                       , DTA_KeepRatio     , true
-                      , DTA_DestWidth     , w
-                      , DTA_DestHeight    , h
+                      , DTA_DestWidthF    , w
+                      , DTA_DestHeightF   , h
                       , DTA_Alpha         , mAlpha
                       , DTA_VirtualWidth  , mScreenWidth
                       , DTA_VirtualHeight , mScreenHeight
